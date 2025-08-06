@@ -25,7 +25,7 @@
 | **Google Sheets** | Data visualizations and executive summary |
 
 ## Business Questions
-#### After meeting with the executive team at the marketing agency, including the Head of Performance, Audience Strategy Lead, CMO, and Growth Marketing Manager. It was clear that this analysis needed to serve real business decision-making, not just generic metrics. Each stakeholder had distinct goals, and the questions were shaped around their priorities:
+##### After meeting with the executive team at the marketing agency, including the Head of Performance, Audience Strategy Lead, CMO, and Growth Marketing Manager. It was clear that this analysis needed to serve real business decision-making, not just generic metrics. Each stakeholder had distinct goals, and the questions were shaped around their priorities:
 
 ### 📈 Performance Marketing Manager
 #### Focus: Cost efficiency, ROI optimization, and platform performance
