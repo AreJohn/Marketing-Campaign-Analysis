@@ -1,41 +1,71 @@
-# Marketing Campaign Analysis USing SQL
-# Campaign Performance Analysis Using SQL
-
-## Table of contents
-- [Introduction](#Introduction)
-- [Project Objectives](#Project-Objectives)
-- [Dataset](#Dataset)
+# Data-Driven Optimization of Multi-Channel Marketing Campaigns
+## Table Of Contents
+- [Business Context](#Business-Context)
+- [Project Goal](#Project-Goal)
 - [Tools](#Tools)
 - [Business Questions](#Business-Questions)
-- [Insights](#Insights)
-- [Recommendations](#Recommendations)
-  
-## Introduction
-##### Marketing campaigns generate vast amounts of data, but not all campaigns deliver the same value. To make informed decisions, it’s essential to analyze performance metrics across different platforms, audiences, and strategies.
-##### In this project, I analyzed 200,000+ marketing campaigns across multiple platforms using PostgreSQL to uncover the most cost-effective strategies. From impressions to ROI, I explored metrics that reveal which campaigns work best and why.
+- [Data Preparation & Cleaning](#Data-Preparation-&-Cleaning)
 
-## Project Objectives
-##### - Understand the campaign dataset structure and key variables
-##### - Build a PostgreSQL database and load the data
-##### - Use SQL to extract performance metrics and answer critical business questions
-##### - Visualize key findings and support decision-making with data-driven insights
+## Business Context
+##### A national performance marketing agency running campaigns for multiple clients across Google Ads, YouTube, Facebook, Email, and Display channels needed to evaluate the **efficiency and ROI** of their digital strategies.
+##### They manage over **200,000+ campaigns** with diverse audience targeting, channel strategies, and customer segments across locations. The marketing leadership team needed to know:
+##### - Which audiences are actually converting?
+##### - Where should we scale or cut spend?
+##### - Which platforms offer the best bang for our buck?
+##### As a Marketing Analyst consultant, I was brought in to analyze their campaign data and deliver **clear, actionable recommendations** through **SQL-driven analysis** and **clean executive-facing visuals**.
 
-## Dataset
-📎 [Access the dataset here](https://docs.google.com/spreadsheets/d/1LBGqmX9jT6HuJwHrVZXjIKPxqElkYFPg/edit?usp=drive_link)
+## Project Goal
+##### To evaluate the **return on investment (ROI)** and **efficiency** of paid marketing efforts across platforms, audiences, and locations—enabling smarter budget reallocation and campaign strategy decisions.
 
 ## Tools
-- **PostgreSQL** – Database and SQL querying  
-- **Google Sheets** – Source data and data visualization.
 
-## Database Setup
-##### The database was created in **PostgreSQL**. Here's a breakdown:
+| Tool         | Purpose                                   |
+|--------------|-------------------------------------------|
+| **PostgreSQL**  | Database creation, data loading, SQL querying |
+| **Google Sheets** | Data visualizations and executive summary |
 
-<details>
-<summary>✅ Table Creation</summary>
+## Business Questions
+#### After meeting with the executive team at the marketing agency, including the Head of Performance, Audience Strategy Lead, CMO, and Growth Marketing Manager. It was clear that this analysis needed to serve real business decision-making, not just generic metrics. Each stakeholder had distinct goals, and the questions were shaped around their priorities:
 
-<br>
+### 📈 Performance Marketing Manager
+#### Focus: Cost efficiency, ROI optimization, and platform performance
+##### 1. Which campaigns achieved the highest return per $1 spent, normalized by duration and impressions?
+##### 2. Which channels deliver the most conversions for every 1,000 impressions?
+##### 3. What is the cost per conversion trend by platform over time?
+##### 4. Which campaigns combine high CTR (>10%) and high ROI (>5x)?
+##### 5. Which platform has the best engagement-adjusted ROI?
+
+### 👥 Audience Strategist
+#### Focus: Identifying the best-performing audience segments and combinations
+##### 6. Which segment + audience pairing (e.g., “Health & Wellness” + “Men 25–34”) converted most efficiently?
+##### 7. Which segments show high impressions but poor engagement?
+##### 8. What audience-platform pairings outperform others in both ROI and CTR?
+##### 9. How does conversion rate vary across audience types and platforms?
+
+### 💰 Finance / CMO
+#### Focus: Budget effectiveness and strategic reallocation of marketing spend
+##### 10. Which companies spent the most and did that investment justify the return?
+##### 11. Which channels show ROI declines as acquisition cost increases?
+##### 13. If the budget were reduced by 30%, which campaigns could be paused with minimal impact on conversions?
+##### 15. Which regions consistently underperform or overperform and should have budgets scaled accordingly?
+
+### 📊 Growth & Strategy Team
+#### Focus: Uncovering low-cost, high-return campaign opportunities
+##### 16. Which campaigns delivered strong engagement and conversion outcomes on a limited budget?
+##### 17. What underutilized platforms offer untapped potential in terms of engagement-adjusted ROI?
+
+---
+
+## Data Preparation & Cleaning
+##### Once the project goals and business questions were defined, the next step was to prepare the campaign data for analysis in **PostgreSQL**. This involved setting up a new database, defining a table schema with appropriate data types, and importing the dataset using the `/COPY` command.
+
+#### 🗄️ PostgreSQL Database Setup
 
 ```sql
+-- Step 1: Create the Database 
+CREATE DATABASE campaign_analysis;
+
+-- Step 2: Create the main table to store campaign data
 CREATE TABLE campaigndata (
     campaign_id SERIAL PRIMARY KEY,
     company TEXT,
@@ -54,178 +84,88 @@ CREATE TABLE campaigndata (
     customer_segment TEXT
 );
 ```
-</details>
 
-<details> <summary> ✅ Data Import </summary> <br>
+#### Data Import from CSV
+##### The raw dataset was imported from a .csv file using the /COPY command in the psql CLI.
+To avoid issues with date parsing (e.g. 13/01/2021 being misinterpreted), the datestyle was explicitly set to ISO, DMY.
 
 ```sql
-\COPY campaigndata(company, campaign_type, target_audience, duration, channel_used,
-conversion_rate, acquisition_cost, roi, location, date, clicks, impressions, engagement_score, customer_segment)
-FROM '/path/to/campaign_data.csv' DELIMITER ',' CSV HEADER;
+-- Changing the datestyle to DMY
+BEGIN;
+SET datestyle TO ISO, DMY;
+
+-- Run in psql CLI to import the data
+\COPY public.campaigndata (
+    campaign_id, company, campaign_type, target_audience, duration,
+    channel_used, conversion_rate, acquisition_cost, roi, location,
+    date, clicks, impressions, engagement_score, customer_segment
+)
+FROM 'C:/Users/marketing_campaign_dataset.csv'
+DELIMITER ',' CSV HEADER QUOTE '"' ESCAPE '''';
 ```
-</details>
 
-###### Here's an overview of the dataset:
-![Overview of the dataset](https://github.com/AreJohn/absenteeism/blob/main/assets/images/picture%20of%20the%20newly%20created%20table.png)
+#### Initial Data Review
+##### After successful import, the first step was to explore the structure and quality of the data.
 
-The dataset includes the following columns:
-###### 1. Company: Name of the company running the campaign.
-###### 2. Campaign_Type: The type of campaign (e.g., Email, Display, Social Media).
-###### 3. Target_Audience: Demographic targeting for the campaign (e.g., Men 18-24, Women 35-44).
-###### 4. Duration: The duration of the campaign (e.g., 30 days, 60 days).
-###### 5. Channel_Used: The advertising channel/platform used (e.g., Google Ads, YouTube, Instagram).
-###### 6. Conversion_Rate: The conversion rate for the campaign, a decimal number (e.g., 0.04).
-###### 7. Acquisition_Cost: The total cost of acquiring customers through the campaign, in monetary units (e.g., $16,174.00).
-###### 8. ROI: Return on Investment (ROI) for the campaign, expressed as a numeric value (e.g., 6.29).
-###### 9. Location: Geographic location where the campaign was targeted (e.g., Chicago, New York).
-###### 10.Date: The date when the campaign started (e.g., 1/1/2021).
-###### 11.Clicks: The total number of clicks generated by the campaign.
-###### 12.Impressions: The total number of impressions generated by the campaign.
-###### 13.Engagement_Score: A numeric score representing engagement for the campaign (e.g., 6, 7, 10).
-###### 14.Customer_Segment: The specific customer segment targeted by the campaign (e.g., Health & Wellness, Fashionistas).
-
-## Business Questions
-#### Below are the questions guiding my analysis:
-1. What Campaign had the highest Impressions?
-2. What Campaign had the highest Highest ROI?
-3. What are the Top 3 Locations with the highest Total Impressions
-4. What Target Audience has the highest Engagement Score on average?
-5. What is the Overall Click-Through Rate (CTR) of all campaigns ran?
-6. What is the Most Cost-Effective Campaign (Lowest Cost per Conversion) and what Company runs the most Cost-Effective Campaign?
-7. How many Campaigns have a CTR Above A Threshold(95%)?
-8. What is the Total Conversions by Channel?
-
-## Insights
-#### 1. A total of **200,005 campaigns** were analyzed, and the campaign with the **highest impressions reached 10,000** views.
-
-<details> 
-<summary>1️⃣ Total Impressions per Campaign</summary> <br>
-    
 ```sql
-SELECT campaign_id, impressions
-FROM campaigndata
-ORDER BY impressions DESC
-LIMIT 1;
+SELECT * FROM campaigndata LIMIT 20;
 ```
-</details>
+#### Data Quality Checks
 
-#### 2. Campaign with the Highest ROI
-**Insight:**
-**Campaign ID 168** by **NextGen Systems** recorded the highest **ROI at 800%**, meaning every \$1 spent generated \$8 in return.
+##### Before diving into deeper analysis, I performed a series of data quality checks to ensure the dataset was accurate, consistent, and analysis-ready. These checks are crucial in a business environment where decisions are made based on data — and even small data issues can lead to misleading insights.
+##### Key Quality Checks Performed
 
-<details> 
-<summary>2️⃣ Campaign with the Highest ROI</summary>  <br>
+| Check Type           | Description                                                                 |
+|----------------------|-----------------------------------------------------------------------------|
+| ✅ **Missing Values**        | Checked for any NULLs in key metrics like `clicks`, `impressions`, `roi`, `acquisition_cost` |
+| ✅ **Duplicates**           | Verified uniqueness of `campaign_id` and removed duplicates if found |
+| ✅ **Incorrect Data Types** | Confirmed that `conversion_rate`, `roi`, and `acquisition_cost` used numeric-compatible types |
+| ✅ **Invalid Zero Values**  | Flagged campaigns with `0` impressions or `0` clicks where conversions > 0 (illogical cases) |
+| ✅ **Outlier Detection**    | Checked for campaigns with unusually high or low `conversion_rate`, `roi`, or `acquisition_cost` |
+| ✅ **Currency Consistency** | Verified all `acquisition_cost` values were correctly interpreted as currency (no text symbols) |
+
+#### 🧰 Sample SQL Queries Used for Checks
+
+<details>
+<summary>Check for NULLs</summary>
 
 ```sql
-SELECT campaign_id, company, roi
-FROM campaigndata
-ORDER BY roi DESC
-LIMIT 1;
-```
-</details>
-
-#### 3. Top 3 Locations by Impressions
-**Insight:**
-* 🥇 New York — 221.35M impressions
-* 🥈 Miami — 221.34M impressions
-* 🥉 Chicago — 219M impressions
-
-<details> <summary>3️⃣ Top 3 Locations by Impressions</summary> <br>
-    
-```sql
-SELECT location, SUM(impressions) AS total_impressions
-FROM campaigndata
-GROUP BY location
-ORDER BY total_impressions DESC
-LIMIT 3;
-```
-</details>
-
-#### 4. Average Engagement Score by Target Audience
-**Insight:**
-* Men between ages 18–24 had the **highest engagement score (5.5150)**
-* Women between ages 25–34 and Men 25–34 followed closely
-* Engagement was high across all demographics
-
-<details> <summary>4️⃣ Average Engagement Score by Target Audience</summary>
-    
-```sql
-SELECT target_audience, ROUND(AVG(engagement_score), 4) AS avg_engagement
-FROM campaigndata
-GROUP BY target_audience
-ORDER BY avg_engagement DESC;
-```
-</details>
-
-#### 5. Overall Click-Through Rate (CTR)
-**Insight:**
-The overall **CTR was 9.98%**, which significantly exceeds the industry average of 2–3%.
-
-<details> <summary>5️⃣ Overall Click-Through Rate (CTR)</summary> <br>
-    
-```sql
-SELECT ROUND(SUM(clicks) * 100.0 / NULLIF(SUM(impressions), 0), 2) AS overall_ctr
+-- Check for missing values in key columns
+SELECT 
+    COUNT(*) FILTER (WHERE clicks IS NULL) AS null_clicks,
+    COUNT(*) FILTER (WHERE impressions IS NULL) AS null_impressions,
+    COUNT(*) FILTER (WHERE roi IS NULL) AS null_roi,
+    COUNT(*) FILTER (WHERE acquisition_cost IS NULL) AS null_cost
 FROM campaigndata;
 ```
 </details>
 
-#### 6. Most Cost-Effective Campaign
-**Insight:**
-**Campaign ID 118451** by **Alpha Innovations** had the **lowest cost per conversion: \$34.22**
-Alpha Innovations appeared **3 times in the top 6 most efficient campaigns**.
-
-<details> <summary>6️⃣ Most Cost-Effective Campaign</summary>
-
-<br>
+ <details> <summary>Check for Duplicate Campaign IDs</summary>
 
 ```sql
-SELECT campaign_id, company,
-       ROUND(CAST(acquisition_cost AS NUMERIC) / NULLIF(conversion_rate, 0), 2) AS cost_per_conversion
+SELECT campaign_id, COUNT(*) 
 FROM campaigndata
-ORDER BY cost_per_conversion ASC
-LIMIT 6;
+GROUP BY campaign_id
+HAVING COUNT(*) > 1;
 ```
-</details>
+</details> 
 
-#### 7. Campaigns with CTR Above a Threshold
-**Insight:**
-**Campaign ID 123375** had the **highest CTR at 99.2%**
-TechCorp and Alpha Innovations both appeared multiple times among the **top 10** campaigns.
+<details> <summary>Find Zero or Illogical Values</summary>
 
-<details> <summary>7️⃣ Campaigns with CTR Above 95%</summary> <br>
-    
 ```sql
-SELECT campaign_id, company,
-       ROUND((clicks * 100.0) / NULLIF(impressions, 0), 2) AS ctr
+-- Campaigns with conversions but zero clicks or impressions
+SELECT *
 FROM campaigndata
-WHERE (clicks * 100.0 / NULLIF(impressions, 0)) > 95
-ORDER BY ctr DESC
-LIMIT 10;
+WHERE (clicks = 0 OR impressions = 0) AND conversion_rate > 0;
 ```
-</details>
+</details> 
 
-#### 8. Rank Channels by Total Conversions
-**Insight:**
-* 📬 **Email** had the **highest number of conversions (1.48M)**
-* 🌐 Website and Google Ads followed
-* 📱 Facebook had the **lowest conversions** among major platforms
+<details> <summary>Identify Outliers (High ROI)</summary>
 
-<details> <summary>8️⃣ Total Conversions by Channel</summary> <br>
-    
 ```sql
-SELECT channel_used,
-       ROUND(SUM(clicks * conversion_rate), 2) AS total_conversions
+-- Flag campaigns with extremely high ROI for manual review
+SELECT *
 FROM campaigndata
-GROUP BY channel_used
-ORDER BY total_conversions DESC;
+WHERE roi > 1000 OR roi < 0;
 ```
 </details>
-
-##### [Here's the full `.sql` script](https://github.com/AreJohn/Analysis-of-Marketing-Campaign-Performance-using-SQL/blob/main/assets/docs/sql%20file.sql)
-
-## Final Takeaways
-
-* Channels like **Email, Google Ads, and Websites** should be prioritized
-* Focus on **audiences with high engagement** (Men 18–24, Women 25–34)
-* Use **CTR leaders as benchmarks** for future ad creatives
-* Platforms with **high impressions but low conversions** may need targeting adjustments
