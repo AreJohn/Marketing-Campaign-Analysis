@@ -169,3 +169,343 @@ FROM campaigndata
 WHERE roi > 1000 OR roi < 0;
 ```
 </details>
+
+1. The data did not conatin duplicates
+2. The data did not contain blanks
+
+## Stakeholder-Focused Analysis
+##### With a clean, validated dataset, I used SQL L to answer the business-critical questions, mapped directly to the needs of key stakeholders within the marketing agency.
+##### Each group below includes:  
+##### - The business question  
+##### - A concise insight  
+##### - A collapsible SQL block showing how the answer was derived
+
+#### 📈 Performance Marketing Manager
+##### Focus: Cost efficiency, ROI optimization, and platform performance.
+##### 1. **Which campaigns achieved the highest return per $1 spent, normalized by duration and impressions?**
+**Insight:** Campaigns run on YouTube and Email platforms for 30–45 days produced the highest ROI per impression, especially those from **Alpha Innovations**.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT campaign_id, company, roi, impressions, duration,
+       ROUND(roi / NULLIF(impressions, 0), 4) AS roi_per_impression
+FROM campaigndata
+ORDER BY roi_per_impression DESC
+LIMIT 10;
+````
+
+</details>
+
+---
+
+#### 2. **Which channels deliver the most conversions per 1,000 impressions?**
+
+🧠 **Insight:** **Email and Website** outperformed Facebook and Display in conversions per 1,000 impressions, indicating more qualified traffic.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT channel_used,
+       ROUND(SUM(clicks * conversion_rate) * 1000.0 / NULLIF(SUM(impressions), 0), 2) AS conversions_per_1000_impressions
+FROM campaigndata
+GROUP BY channel_used
+ORDER BY conversions_per_1000_impressions DESC;
+```
+
+</details>
+
+---
+
+#### 3. **What is the cost per conversion trend by platform over time?**
+
+🧠 **Insight:** **Facebook’s cost per conversion is increasing steadily**, while **Email and YouTube remain cost-stable** across time.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT channel_used, DATE_TRUNC('month', date) AS month,
+       ROUND(SUM(acquisition_cost::numeric) / NULLIF(SUM(clicks * conversion_rate), 0), 2) AS cost_per_conversion
+FROM campaigndata
+GROUP BY channel_used, month
+ORDER BY month, channel_used;
+```
+
+</details>
+
+---
+
+#### 4. **Which campaigns combine high CTR (>10%) and high ROI (>5x)?**
+
+🧠 **Insight:** **Alpha Innovations** had 3 of the top 10 high-CTR, high-ROI campaigns. Most used Email or Instagram.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT campaign_id, company, roi, clicks, impressions,
+       ROUND((clicks * 100.0) / NULLIF(impressions, 0), 2) AS ctr
+FROM campaigndata
+WHERE roi > 5
+  AND (clicks * 100.0 / NULLIF(impressions, 0)) > 10
+ORDER BY roi DESC;
+```
+
+</details>
+
+---
+
+#### 5. **Which platform has the best engagement-adjusted ROI?**
+
+🧠 **Insight:** **YouTube** outperformed other platforms when adjusting ROI by engagement score.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT channel_used,
+       ROUND(AVG(roi * engagement_score), 2) AS adjusted_roi
+FROM campaigndata
+GROUP BY channel_used
+ORDER BY adjusted_roi DESC;
+```
+
+</details>
+
+---
+
+### 👥 Audience Strategist
+
+Focus: Best audience-platform combinations and engagement insights.
+
+---
+
+#### 6. **Which audience + segment pairing converted most efficiently?**
+
+🧠 **Insight:** “Men 25–34” in the **Health & Wellness** segment had the **highest conversion efficiency** when reached via Email or Google Ads.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT target_audience, customer_segment,
+       ROUND(SUM(clicks * conversion_rate) * 100.0 / NULLIF(SUM(impressions), 0), 2) AS conversion_efficiency
+FROM campaigndata
+GROUP BY target_audience, customer_segment
+ORDER BY conversion_efficiency DESC
+LIMIT 10;
+```
+
+</details>
+
+---
+
+#### 7. **Which segments show high impressions but low engagement?**
+
+🧠 **Insight:** **“Outdoor Adventurers”** had consistently high impressions but ranked lowest in engagement scores.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT customer_segment, SUM(impressions) AS total_impressions,
+       ROUND(AVG(engagement_score), 2) AS avg_engagement
+FROM campaigndata
+GROUP BY customer_segment
+ORDER BY avg_engagement ASC
+LIMIT 5;
+```
+
+</details>
+
+---
+
+#### 8. **What audience-platform pairs consistently outperform?**
+
+🧠 **Insight:** **Women 25–34** on Instagram and YouTube delivered high CTR and conversion rates across campaigns.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT target_audience, channel_used,
+       ROUND(AVG(conversion_rate * 100), 2) AS avg_conversion_rate,
+       ROUND(AVG(engagement_score), 2) AS avg_engagement
+FROM campaigndata
+GROUP BY target_audience, channel_used
+ORDER BY avg_conversion_rate DESC
+LIMIT 10;
+```
+
+</details>
+
+#### 9. **How does conversion rate vary across audience types and platforms?**
+
+🧠 **Insight:** The **Men 25–34** audience consistently showed high conversion rates on **YouTube** and **Email**, while **All Ages** campaigns underperformed across most platforms.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT target_audience, channel_used,
+       ROUND(AVG(conversion_rate * 100), 2) AS avg_conversion_rate
+FROM campaigndata
+GROUP BY target_audience, channel_used
+ORDER BY avg_conversion_rate DESC;
+````
+
+</details>
+
+---
+
+### 💰 Finance / CMO
+
+#### Focus: Budget effectiveness and strategic reallocation of marketing spend
+
+---
+
+#### 10. **Which companies spent the most—and did that investment justify the return?**
+
+🧠 **Insight:** While **TechCorp** had the highest spend, **Alpha Innovations** delivered **higher ROI per dollar** spent.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT company,
+       SUM(acquisition_cost::numeric) AS total_spend,
+       ROUND(AVG(roi), 2) AS avg_roi
+FROM campaigndata
+GROUP BY company
+ORDER BY total_spend DESC;
+```
+
+</details>
+
+---
+
+#### 11. **Which channels show ROI declines as acquisition cost increases?**
+
+🧠 **Insight:** **Facebook** and **Display** campaigns showed **declining ROI trends** at higher acquisition cost levels, while **Email** remained stable.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT channel_used,
+       ROUND(CORR(acquisition_cost::numeric, roi), 2) AS roi_cost_correlation
+FROM campaigndata
+GROUP BY channel_used
+ORDER BY roi_cost_correlation ASC;
+```
+
+</details>
+
+---
+
+#### 13. **If the budget were reduced by 30%, which campaigns could be paused with minimal impact on conversions?**
+
+🧠 **Insight:** Campaigns with **high cost and low conversion efficiency** (especially on Display and Facebook) were flagged as **low-priority** under budget cuts.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT campaign_id, company, channel_used,
+       acquisition_cost::numeric AS cost,
+       ROUND(clicks * conversion_rate, 2) AS conversions,
+       ROUND((clicks * conversion_rate) / NULLIF(acquisition_cost::numeric, 0), 4) AS conv_per_dollar
+FROM campaigndata
+ORDER BY conv_per_dollar ASC
+LIMIT 10;
+```
+
+</details>
+
+---
+
+#### 15. **Which regions consistently underperform or overperform and should have budgets scaled accordingly?**
+
+🧠 **Insight:** **Miami and Chicago** had strong ROI and conversion rates, while **Houston** and **Phoenix** underperformed despite high spend.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT location,
+       ROUND(AVG(roi), 2) AS avg_roi,
+       ROUND(SUM(clicks * conversion_rate), 2) AS total_conversions,
+       SUM(acquisition_cost::numeric) AS total_spend
+FROM campaigndata
+GROUP BY location
+ORDER BY avg_roi DESC;
+```
+
+</details>
+
+---
+
+### 📊 Growth & Strategy Team
+
+#### Focus: Uncovering low-cost, high-return campaign opportunities
+
+---
+
+#### 16. **Which campaigns delivered strong engagement and conversion outcomes on a limited budget?**
+
+🧠 **Insight:** Campaigns by **Innovate Industries** and **Alpha Innovations** stood out with **low spend but high conversion-adjusted engagement**.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT campaign_id, company, acquisition_cost::numeric AS cost,
+       ROUND(engagement_score * conversion_rate, 2) AS engagement_conversion_score
+FROM campaigndata
+WHERE acquisition_cost::numeric < 10000
+ORDER BY engagement_conversion_score DESC
+LIMIT 10;
+```
+
+</details>
+
+---
+
+#### 17. **What underutilized platforms offer untapped potential in terms of engagement-adjusted ROI?**
+
+🧠 **Insight:** Despite fewer campaigns, **Website** and **Instagram** had some of the **highest engagement-adjusted ROIs**, signaling underused opportunities.
+
+<details>
+<summary>📜 SQL</summary>
+
+```sql
+SELECT channel_used,
+       COUNT(*) AS campaign_count,
+       ROUND(AVG(roi * engagement_score), 2) AS engagement_roi
+FROM campaigndata
+GROUP BY channel_used
+ORDER BY engagement_roi DESC;
+```
+
+</details>
+
+#### 🧾[Download the complete SQL analysis script](./sql/campaign_analysis.sql)
+
+---
+
+## 📊 Visual Summary & Executive Dashboard
+
+To make the insights actionable for stakeholders, I created a clean, stakeholder-facing dashboard in Google Sheets.
+
+The dashboard includes:
+- 📈 ROI and conversion trends by platform and location
+- 📊 Audience performance vs. campaign spend
+- 💰 Cost-efficiency breakdown by company and segment
+- 🧠 Engagement vs. ROI scatter analysis
+
+📎 [View the full Google Sheets dashboard here](https://link-to-your-dashboard)
+
+> *Each tab is structured around stakeholder roles (Performance, Audience, Finance, Growth) for clarity.*
